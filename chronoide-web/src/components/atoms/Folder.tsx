@@ -1,85 +1,118 @@
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import CheckBoxOutlineBlankOutlinedIcon from "@mui/icons-material/CheckBoxOutlineBlankOutlined";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DescriptionIcon from "@mui/icons-material/Description";
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import TopicIcon from "@mui/icons-material/Topic";
-import { Box, Button, IconButton, Stack } from "@mui/material";
-import { useMemo, useState } from "react";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import {
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { ChangeEvent, memo, useState } from "react";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import { isNil } from "../../common/features";
-import { createTodo } from "../../models/Todo";
+import { ChronoFolder, ChronoTask } from "../../models/Chrono";
+import { ChronoTree } from "../../models/ChronoTree";
+import { chronoTreeState } from "../../recoils/chrono.state";
 import { folderState } from "../../recoils/folder.state";
-import { todoState } from "../../recoils/todo.state";
 import FolderTree from "../moleculars/FolderTree";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 
-interface FolderProps {
-  todo: Todo;
-  isRoot?: boolean;
-}
-
-function Folder({ todo, isRoot }: FolderProps) {
+const ChronoFolderLevel = memo(({ chrono }: { chrono: ChronoFolder }) => {
+  const [editMode, setEditMode] = useState(false);
   const [open, setOpen] = useState(false);
-  const setFolder = useSetRecoilState(folderState);
-  const setTodos = useSetRecoilState(todoState);
-  const folders = useRecoilValue(folderState);
+  const [folders, setFolder] = useRecoilState(folderState);
+  const [chronoTree, setChronoTree] = useRecoilState(chronoTreeState);
+  const [chronoData, setChronoData] = useState<Partial<ChronoFolder>>({});
 
-  const currentFolder = useMemo(() => {
-    return todo.directories[todo.directories.length - 1];
-  }, [todo.directories]);
+  function handleSelectFolder() {
+    if (folders.selected === chrono) {
+      folders.selected = null;
+      setFolder((folder) => {
+        return {
+          ...folder,
+        };
+      });
+    } else {
+      folders.selected = null;
+      setFolder((folder) => {
+        return {
+          ...folder,
+          selected: chrono,
+        };
+      });
+    }
+  }
 
-  function handleSelectFolder(todo: Todo) {
-    setFolder((folder) => {
-      return {
-        ...folder,
-        selected: todo.directories,
-      };
+  function handleAddFolder() {
+    const chronoFolder = new ChronoFolder();
+    chronoFolder.name = "new folder";
+    chrono.addChrono(chronoFolder);
+    setOpen(true);
+
+    setChronoTree((chronoTree) => {
+      const newChronoTree = new ChronoTree();
+      newChronoTree.childrens = [...chronoTree.childrens];
+      return newChronoTree;
     });
   }
 
-  function handleAddFolder({ name }: { name: string }) {
-    const folder = createTodo({
-      id: 1,
-      type: "folder",
-      title: name,
-      content: name + " content",
-      directories: [...todo.directories, name],
+  function handleRemoveChrono() {
+    chronoTree.deleteChrono(chrono);
+    setChronoTree((chronoTree) => {
+      const newChronoTree = new ChronoTree();
+      newChronoTree.childrens = [...chronoTree.childrens];
+      return newChronoTree;
     });
+  }
 
-    todo.childrens.push(folder);
+  function handleOpen() {
+    chrono.childrens.length > 0 && setOpen(!open);
+  }
 
-    setTodos((todos) => todos.slice(0));
-
-    // setTodos((todos) => {
-    //   const newTodos = [...todos];
-    //   for (const td of newTodos) {
-    //     const isSame = checkSameDir(td.directories, todo.directories);
-    //     if (isSame) {
-    //       folder.directories[folder.directories.length - 1] +=
-    //         folder.directories.length;
-    //       td.childrens.push(folder);
-    //       break;
-    //     }
-    //   }
-    //   return newTodos;
-    // });
+  function handleEditName() {
+    const newMode = !editMode;
+    setEditMode(newMode);
+    if (!newMode) {
+      chrono.name = chronoData.name || chrono.name;
+      setChronoTree((chronoTree) => {
+        const newChronoTree = new ChronoTree();
+        newChronoTree.childrens = [...chronoTree.childrens];
+        return newChronoTree;
+      });
+    }
+  }
+  function handleChangeChronoName(e: ChangeEvent<HTMLInputElement>) {
+    setChronoData((chronoData) => ({
+      ...chronoData,
+      name: e.target.value,
+    }));
   }
 
   return (
-    <Stack key={todo.title}>
+    <Stack>
       <Stack
         direction="row"
         gap={1}
         alignItems="center"
         sx={{
           position: "relative",
-          ml: todo.directories.length,
+          ml: chrono.depth,
         }}>
-        {todo.childrens ? "true" : "false"}
-        {todo.childrens.length > 0 && (
+        {chrono.childrens.length > 0 && (
           <IconButton
             size="small"
-            onClick={() => setOpen(!open)}
+            onClick={handleOpen}
             sx={{
               position: "absolute",
               right: "100%",
@@ -87,39 +120,120 @@ function Folder({ todo, isRoot }: FolderProps) {
             {open ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
           </IconButton>
         )}
+
+        <IconButton
+          color={folders.selected === chrono ? "success" : "inherit"}
+          size="small"
+          onClick={handleSelectFolder}>
+          {folders.selected === chrono ? (
+            <CheckBoxIcon />
+          ) : (
+            <CheckBoxOutlineBlankOutlinedIcon />
+          )}
+        </IconButton>
+
         <Stack
           direction="row"
           alignItems="center"
           sx={{ color: (theme) => theme.palette.text.primary }}>
           {open ? (
-            <FolderOpenIcon />
-          ) : todo.childrens.length > 0 ? (
-            <TopicIcon />
+            <FolderOpenIcon color="warning" />
+          ) : chrono.childrens.length > 0 ? (
+            <TopicIcon color="warning" />
           ) : (
-            <FolderIcon />
+            <FolderIcon color="warning" />
           )}
         </Stack>
-        <Button
-          variant={
-            folders.selected[folders.selected.length - 1] === currentFolder
-              ? "contained"
-              : "text"
-          }
-          size="small"
-          onClick={() => handleSelectFolder(todo)}>
-          {currentFolder} {isNil(isRoot) ? "" : `(${todo.childrens.length})`}
-        </Button>
-        <IconButton onClick={() => handleAddFolder({ name: "new folder" })}>
+
+        {editMode ? (
+          <TextField
+            variant="standard"
+            size="small"
+            value={isNil(chronoData.name) ? chrono.name : chronoData.name}
+            onChange={handleChangeChronoName}
+          />
+        ) : (
+          <Button size="small" onClick={handleOpen}>
+            {chrono.name}
+            {isNil(chrono.parent) ? "" : `(${chrono.childrens.length})`}
+          </Button>
+        )}
+
+        <IconButton color="warning" onClick={() => handleEditName()}>
+          {editMode ? <CheckCircleOutlineIcon /> : <EditNoteIcon />}
+        </IconButton>
+        <IconButton color="primary" onClick={() => handleAddFolder()}>
           <CreateNewFolderIcon />
         </IconButton>
+        {!chrono.root && (
+          <IconButton color="error" onClick={() => handleRemoveChrono()}>
+            <DeleteIcon />
+          </IconButton>
+        )}
       </Stack>
       {open && (
-        <Box sx={{ ml: todo.directories.length }}>
-          <FolderTree todos={todo.childrens} />
+        <Box sx={{ ml: chrono.depth }}>
+          <FolderTree chronos={chrono.childrens} />
         </Box>
       )}
     </Stack>
   );
+});
+
+const ChronoTaskLevel = memo(({ chrono }: { chrono: ChronoTask }) => {
+  const chronoTree = useRecoilValue(chronoTreeState);
+  const setChronoTree = useSetRecoilState(chronoTreeState);
+
+  function handleRemoveChrono() {
+    chronoTree.deleteChrono(chrono);
+    setChronoTree((chronoTree) => {
+      const newChronoTree = new ChronoTree();
+      newChronoTree.childrens = [...chronoTree.childrens];
+      return newChronoTree;
+    });
+  }
+
+  return (
+    <Stack>
+      <Stack
+        direction="row"
+        gap={1}
+        alignItems="center"
+        sx={{
+          position: "relative",
+          ml: chrono.depth,
+        }}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{ color: (theme) => theme.palette.text.primary }}>
+          <DescriptionIcon />
+        </Stack>
+        <Stack direction="row" gap={1} alignItems="center">
+          <Chip size="small" color="success" label={chrono.group} />
+          <Chip size="small" color="info" label={chrono.name} />
+          <Typography fontSize={14} fontWeight={700}>
+            {chrono.title}
+          </Typography>
+          <Typography fontSize={10}>{chrono.content + "2"}</Typography>
+        </Stack>
+        <IconButton color="error" onClick={() => handleRemoveChrono()}>
+          <DeleteIcon />
+        </IconButton>
+      </Stack>
+    </Stack>
+  );
+});
+
+interface FolderProps {
+  chrono: ChronoFolder | ChronoTask;
 }
+
+const Folder = memo(({ chrono }: FolderProps) => {
+  if (chrono instanceof ChronoFolder) {
+    return <ChronoFolderLevel chrono={chrono} />;
+  }
+  return <ChronoTaskLevel chrono={chrono} />;
+});
 
 export default Folder;

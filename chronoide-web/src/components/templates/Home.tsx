@@ -8,57 +8,65 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { ChangeEvent, useLayoutEffect, useState } from "react";
+import { ChangeEvent, KeyboardEvent, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { checkSameDir } from "../../common/features";
 import { Message } from "../../libs/enums";
-// import { TodoModel } from "../../models/Todo";
+import {
+  ChronoFolder,
+  ChronoTask,
+  ChronoTaskKeys,
+  ChronoTaskValues,
+} from "../../models/Chrono";
+import { ChronoTree } from "../../models/ChronoTree";
+import { chronoTreeState } from "../../recoils/chrono.state";
 import { folderState } from "../../recoils/folder.state";
-import { todoState } from "../../recoils/todo.state";
 import FolderTree from "../moleculars/FolderTree";
-import { createTodo } from "../../models/Todo";
 
 function Home() {
-  const [todos, setTodos] = useRecoilState(todoState);
-  const [todoData, setTodoData] = useState<TodoRequire>();
+  const [chronoTree, setChronoTree] = useRecoilState(chronoTreeState);
+  const [chronoDataForm, setChronoDataForm] = useState<{
+    group: string;
+    title: string;
+    content: string;
+  }>({ group: "", title: "", content: "" });
   const folders = useRecoilValue(folderState);
 
-  function handleCreateTodo(
-    todoRequire: Partial<TodoRequire>,
-    // type: "folder" | "file",
+  function handleChangeChronoDataForm(
+    key: ChronoTaskKeys,
+    value: ChronoTaskValues,
   ) {
-    setTodos((todos) => {
-      const todoModel = createTodo(todoRequire);
-      todoModel.type = "file";
-      const newTodos = todos.slice(0);
-      let isAdded = false;
-
-      for (const todo of newTodos) {
-        const isSame = checkSameDir(todo.directories, todoModel.directories);
-        if (isSame) {
-          console.log(todo.childrens, todoModel);
-          if (todo.type === "folder") {
-            Object.assign(todo.childrens, [...todo.childrens, todoModel]);
-            isAdded = true;
-          }
-          break;
-        }
-      }
-
-      if (!isAdded) {
-        newTodos.push(todoModel);
-      }
-
-      return newTodos;
-    });
-    // setTodos(newTodos);
-  }
-
-  function handleChangeTodoData(key: string, value: string) {
-    setTodoData((todoData) => ({
-      ...todoData,
+    setChronoDataForm((chronoDataForm) => ({
+      ...chronoDataForm,
       [key]: value,
     }));
+  }
+
+  function handleCreateChronoTask() {
+    if (!folders.selected) {
+      folders.selected = chronoTree.childrens[0] as ChronoFolder;
+    }
+
+    const chronoTask = new ChronoTask({
+      title: chronoDataForm.title,
+      content: chronoDataForm.content,
+    });
+
+    chronoTask.group = chronoDataForm.group;
+    chronoTask.name = "New Task";
+
+    folders.selected?.addChrono(chronoTask);
+
+    setChronoTree((chronoTree) => {
+      const newChronoTree = new ChronoTree();
+      newChronoTree.childrens = [...chronoTree.childrens];
+      return newChronoTree;
+    });
+    folders.selected = null;
+    setChronoDataForm({
+      title: "",
+      content: "",
+      group: "",
+    });
   }
 
   return (
@@ -70,10 +78,11 @@ function Home() {
         <Typography component="h2" fontWeight={700} fontSize={24} gutterBottom>
           Your Task
         </Typography>
-        <Paper sx={{ p: 3 }}>
-          <FolderTree todos={todos} />
+        <Paper sx={{ p: 3, overflow: "auto", maxHeight: 200 }}>
+          <FolderTree chronoTree={chronoTree} />
         </Paper>
         <Toolbar />
+        {chronoTree.getAllGroups()}
         <Stack
           component={Paper}
           direction="row"
@@ -85,33 +94,42 @@ function Home() {
             disablePortal
             freeSolo
             size="small"
-            options={todos.map((todo) => todo.group)}
+            options={chronoTree.getAllGroups()}
             sx={{ flex: 0.3 }}
+            value={chronoDataForm.group}
             renderInput={(params) => (
               <TextField {...params} label={Message.Group.PLACEHOLDER} />
             )}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              handleChangeTodoData("group", e.target.value)
-            }
+            onKeyUp={(e: KeyboardEvent<HTMLInputElement>) => {
+              handleChangeChronoDataForm(
+                "group",
+                (e.target as HTMLInputElement).value,
+              );
+            }}
           />
           <TextField
             size="small"
             placeholder={Message.Task.PLACEHOLDER}
-            sx={{ flex: 0.7 }}
+            sx={{ flex: 0.3 }}
+            value={chronoDataForm.title}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              handleChangeTodoData("title", e.target.value)
+              handleChangeChronoDataForm("title", e.target.value)
+            }
+          />
+          <TextField
+            multiline
+            size="small"
+            placeholder={Message.Content.PLACEHOLDER}
+            sx={{ flex: 0.4 }}
+            value={chronoDataForm.content}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              handleChangeChronoDataForm("content", e.target.value)
             }
           />
           <Button
             variant="contained"
             color="primary"
-            onClick={() =>
-              handleCreateTodo({
-                title: todoData.title,
-                content: todoData.content,
-                directories: folders.selected || ["root"],
-              })
-            }>
+            onClick={() => handleCreateChronoTask()}>
             ✍️ 추가
           </Button>
         </Stack>

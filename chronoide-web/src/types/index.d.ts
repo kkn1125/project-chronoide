@@ -3,13 +3,13 @@ export declare global {
     name: string;
     path: string;
   }
-  export type TodoState = Todo[];
-  export interface Todo {
+  export type TodoState = Chrono[];
+  export interface Chrono {
     id: number;
     type: string;
     title: string;
     content: string;
-    childrens: Todo[];
+    childrens: Chrono[];
     /* 폴더 */
     directories: string[];
     /* 그룹 */
@@ -23,9 +23,10 @@ export declare global {
     /* 주말 포함 여부 true: 포함, false: 제외 default: false*/
     includeRest: boolean;
   }
-  export interface TodoRequire {
+  export interface ChronoRequire {
     title?: string;
     content?: string;
+    type?: string;
     directories?: string[];
     group?: string;
   }

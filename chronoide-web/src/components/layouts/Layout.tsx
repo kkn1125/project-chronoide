@@ -1,18 +1,22 @@
+import { Stack } from "@mui/material";
 import { Outlet } from "react-router-dom";
 import Header from "./common/Header";
-import { Box, Stack } from "@mui/material";
 
 function Layout() {
   return (
     <Stack
       sx={{
         height: "inherit",
-        backgroundColor: (theme) => theme.palette.background.default,
       }}>
       <Header />
-      <Box flex={1}>
+      <Stack
+        flex={1}
+        sx={{
+          flex: 1,
+          backgroundColor: (theme) => theme.palette.background.default,
+        }}>
         <Outlet />
-      </Box>
+      </Stack>
     </Stack>
   );
 }

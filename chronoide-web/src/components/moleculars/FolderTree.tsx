@@ -1,19 +1,25 @@
 import { Stack } from "@mui/material";
 import Folder from "../atoms/Folder";
+import { ChronoFolder, ChronoTask } from "../../models/Chrono";
+import { ChronoTree } from "../../models/ChronoTree";
 import { useMemo } from "react";
 
 interface FolderTree {
-  todos: Todo[];
+  chronos?: (ChronoTask | ChronoFolder)[];
+  chronoTree?: ChronoTree;
 }
 
-function FolderTree({ todos }: FolderTree) {
+function FolderTree(props?: FolderTree) {
+  const chronoList = useMemo(
+    () => (props.chronoTree ? props.chronoTree.childrens : props.chronos),
+    [props.chronoTree, props.chronos],
+  );
+
   return (
-    <Stack>
-      {todos
-        // .filter((todo) => todo.type === "folder")
-        .map((todo, i) => (
-          <Folder key={todo.title + i} todo={todo} isRoot={i === 0} />
-        ))}
+    <Stack sx={{ mx: 3 }}>
+      {chronoList.map((chrono) => (
+        <Folder key={chrono.type + "-" + chrono.id} chrono={chrono} />
+      ))}
     </Stack>
   );
 }

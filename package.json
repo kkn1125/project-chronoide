@@ -1,0 +1,12 @@
+{
+  "name": "chronoide",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cd chronoide-web && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

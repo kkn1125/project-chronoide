@@ -1,8 +1,8 @@
 export class Chrono {
   static id: number = 0;
   id: number = 0;
-  type: "folder" | "task";
-  name: string;
+  type: "folder" | "task" = "folder";
+  name: string = "no name";
   group: string = "no group";
   order: number = -1;
   depth: number = 0;
@@ -13,49 +13,9 @@ export class Chrono {
 }
 
 export class ChronoFolder extends Chrono {
-  static copy(chrono?: ChronoFolder) {
-    const chronoFolder = new ChronoFolder();
-    chronoFolder.id = chrono.id;
-    chronoFolder.name = chrono.name;
-    chronoFolder.group = chrono.group;
-    chronoFolder.order = chrono.order;
-    chronoFolder.depth = chrono.depth;
-    if (chrono.parent) {
-      const parentFolder = new ChronoFolder();
-      parentFolder.id = chrono.parent.id;
-      parentFolder.name = chrono.parent.name;
-      parentFolder.group = chrono.parent.group;
-      parentFolder.order = chrono.parent.order;
-      parentFolder.depth = chrono.parent.depth;
-      parentFolder.parent = chrono.parent;
-      parentFolder.childrens =
-        chrono.parent.childrens.map((child) => {
-          if (child instanceof ChronoFolder) {
-            child.parent = chrono;
-            return ChronoFolder.copy(child);
-          } else {
-            child.parent = chrono;
-            return ChronoTask.copy(child);
-          }
-        }) || [];
-      chronoFolder.parent = parentFolder;
-    }
-    chronoFolder.childrens = chrono.childrens.map((child) => {
-      if (child instanceof ChronoFolder) {
-        child.parent = chrono;
-        return ChronoFolder.copy(child);
-      } else {
-        child.parent = chrono;
-        return ChronoTask.copy(child);
-      }
-    });
-
-    return chronoFolder;
-  }
-
   readonly root: boolean = false;
 
-  parent: ChronoFolder;
+  parent: ChronoFolder | null = null;
 
   childrens: (ChronoFolder | ChronoTask)[] = [];
 
@@ -64,9 +24,10 @@ export class ChronoFolder extends Chrono {
 
     this.type = "folder";
 
-    this.parent = option?.parent;
-
-    this.root = option?.root || false;
+    if (option) {
+      if (option.parent) this.parent = option.parent;
+      if (option.root) this.root = option.root;
+    }
   }
 
   findByChrono(
@@ -105,28 +66,28 @@ export class ChronoFolder extends Chrono {
 }
 
 export class ChronoTask extends Chrono {
-  static copy(chrono: ChronoTask) {
-    const chronoTask = new ChronoTask();
-    chronoTask.id = chrono.id;
-    chronoTask.name = chrono.name;
-    chronoTask.group = chrono.group;
-    chronoTask.order = chrono.order;
-    chronoTask.depth = chrono.depth;
-    chronoTask.parent = chrono.parent;
+  // static copy(chrono: ChronoTask) {
+  //   const chronoTask = new ChronoTask();
+  //   chronoTask.id = chrono.id;
+  //   chronoTask.name = chrono.name;
+  //   chronoTask.group = chrono.group;
+  //   chronoTask.order = chrono.order;
+  //   chronoTask.depth = chrono.depth;
+  //   chronoTask.parent = chrono.parent;
 
-    chronoTask.title = chrono.title;
-    chronoTask.content = chrono.content;
-    chronoTask.start_at = chrono.start_at;
-    chronoTask.end_at = chrono.end_at;
-    chronoTask.withHoliday = chrono.withHoliday;
+  //   chronoTask.title = chrono.title;
+  //   chronoTask.content = chrono.content;
+  //   chronoTask.start_at = chrono.start_at;
+  //   chronoTask.end_at = chrono.end_at;
+  //   chronoTask.withHoliday = chrono.withHoliday;
 
-    return chronoTask;
-  }
+  //   return chronoTask;
+  // }
 
-  parent: ChronoFolder;
+  parent: ChronoFolder | null = null;
 
-  title: string;
-  content: string;
+  title: string = "no title";
+  content: string = "no content";
   start_at: number = 0;
   end_at: number = 0;
   withHoliday: boolean = false;
@@ -136,8 +97,10 @@ export class ChronoTask extends Chrono {
 
     this.type = "task";
 
-    this.title = option?.title;
-    this.content = option?.content;
+    if (option) {
+      if (option.title) this.title = option.title;
+      if (option.content) this.content = option.content;
+    }
   }
 
   get duration() {

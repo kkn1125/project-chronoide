@@ -14,26 +14,27 @@ import {
   Chip,
   IconButton,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
-import { ChangeEvent, memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import { isNil } from "../../common/features";
 import { ChronoFolder, ChronoTask } from "../../models/Chrono";
 import { ChronoTree } from "../../models/ChronoTree";
 import { chronoTreeState } from "../../recoils/chrono.state";
 import { folderState } from "../../recoils/folder.state";
+import Editer from "../moleculars/Editer";
 import FolderTree from "../moleculars/FolderTree";
-import EditNoteIcon from "@mui/icons-material/EditNote";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 
 const ChronoFolderLevel = memo(({ chrono }: { chrono: ChronoFolder }) => {
   const [editMode, setEditMode] = useState(false);
   const [open, setOpen] = useState(false);
   const [folders, setFolder] = useRecoilState(folderState);
   const [chronoTree, setChronoTree] = useRecoilState(chronoTreeState);
-  const [chronoData, setChronoData] = useState<Partial<ChronoFolder>>({});
+
+  useEffect(() => {
+    setOpen(chrono.childrens.length > 0);
+  }, [chrono.childrens]);
 
   function handleSelectFolder() {
     if (folders.selected === chrono) {
@@ -80,27 +81,9 @@ const ChronoFolderLevel = memo(({ chrono }: { chrono: ChronoFolder }) => {
     chrono.childrens.length > 0 && setOpen(!open);
   }
 
-  function handleEditName() {
-    const newMode = !editMode;
-    setEditMode(newMode);
-    if (!newMode) {
-      chrono.name = chronoData.name || chrono.name;
-      setChronoTree((chronoTree) => {
-        const newChronoTree = new ChronoTree();
-        newChronoTree.childrens = [...chronoTree.childrens];
-        return newChronoTree;
-      });
-    }
-  }
-  function handleChangeChronoName(e: ChangeEvent<HTMLInputElement>) {
-    setChronoData((chronoData) => ({
-      ...chronoData,
-      name: e.target.value,
-    }));
-  }
-
   return (
     <Stack>
+      {/* 폴더 인라인 */}
       <Stack
         direction="row"
         gap={1}
@@ -121,6 +104,7 @@ const ChronoFolderLevel = memo(({ chrono }: { chrono: ChronoFolder }) => {
           </IconButton>
         )}
 
+        {/* 선택 */}
         <IconButton
           color={folders.selected === chrono ? "success" : "inherit"}
           size="small"
@@ -132,6 +116,7 @@ const ChronoFolderLevel = memo(({ chrono }: { chrono: ChronoFolder }) => {
           )}
         </IconButton>
 
+        {/* 폴더 아이콘 */}
         <Stack
           direction="row"
           alignItems="center"
@@ -145,32 +130,29 @@ const ChronoFolderLevel = memo(({ chrono }: { chrono: ChronoFolder }) => {
           )}
         </Stack>
 
-        {editMode ? (
-          <TextField
-            variant="standard"
-            size="small"
-            value={isNil(chronoData.name) ? chrono.name : chronoData.name}
-            onChange={handleChangeChronoName}
-          />
-        ) : (
-          <Button size="small" onClick={handleOpen}>
-            {chrono.name}
-            {isNil(chrono.parent) ? "" : `(${chrono.childrens.length})`}
-          </Button>
-        )}
+        {/* 폴더 제목 */}
+        <Button size="small" onClick={handleOpen}>
+          {chrono.name}
+          {isNil(chrono.parent) ? "" : `(${chrono.childrens.length})`}
+        </Button>
 
-        <IconButton color="warning" onClick={() => handleEditName()}>
-          {editMode ? <CheckCircleOutlineIcon /> : <EditNoteIcon />}
-        </IconButton>
+        {/* 수정모드 토글 */}
+        <Editer chrono={chrono} />
+
+        {/* 폴더 생성 */}
         <IconButton color="primary" onClick={() => handleAddFolder()}>
           <CreateNewFolderIcon />
         </IconButton>
+
+        {/* 삭제 버튼 */}
         {!chrono.root && (
           <IconButton color="error" onClick={() => handleRemoveChrono()}>
             <DeleteIcon />
           </IconButton>
         )}
       </Stack>
+
+      {/* 하위 폴더가 존재할 시 폴더트리 재귀 호출 */}
       {open && (
         <Box sx={{ ml: chrono.depth }}>
           <FolderTree chronos={chrono.childrens} />
@@ -217,6 +199,7 @@ const ChronoTaskLevel = memo(({ chrono }: { chrono: ChronoTask }) => {
           </Typography>
           <Typography fontSize={10}>{chrono.content + "2"}</Typography>
         </Stack>
+        <Editer chrono={chrono} />
         <IconButton color="error" onClick={() => handleRemoveChrono()}>
           <DeleteIcon />
         </IconButton>

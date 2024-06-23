@@ -1,18 +1,6 @@
 import { ChronoFolder, ChronoTask } from "./Chrono";
 
 export class ChronoTree {
-  static copy(chronoTree: ChronoTree) {
-    const newChronoTree = new ChronoTree();
-    newChronoTree.childrens = chronoTree.childrens.map((chrono) => {
-      if (chrono instanceof ChronoFolder) {
-        return ChronoFolder.copy(chrono);
-      } else {
-        return ChronoTask.copy(chrono);
-      }
-    });
-    return newChronoTree;
-  }
-
   childrens: (ChronoFolder | ChronoTask)[] = [];
 
   constructor() {

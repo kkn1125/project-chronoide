@@ -1,0 +1,198 @@
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import {
+  Box,
+  Button,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  List,
+  ListItem,
+  SwipeableDrawer,
+  Switch,
+  TextField,
+} from "@mui/material";
+import {
+  Dispatch,
+  KeyboardEvent,
+  MouseEvent,
+  SetStateAction,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
+import { isNil } from "../../common/features";
+import { ChronoFolder, ChronoTask } from "../../models/Chrono";
+import { useSetRecoilState } from "recoil";
+import { chronoTreeState } from "../../recoils/chrono.state";
+import { ChronoTree } from "../../models/ChronoTree";
+
+interface EditorProps {
+  chrono: ChronoFolder | ChronoTask;
+  // setOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+const ChronoEditerForm = ({
+  chronoData,
+  setChronoData,
+}: {
+  chronoData: ChronoFolder | ChronoTask;
+  setChronoData: Dispatch<SetStateAction<ChronoFolder | ChronoTask>>;
+}) => {
+  const entries = Object.entries(chronoData);
+
+  const listForm = useCallback(
+    (field: keyof ChronoFolder | keyof ChronoTask) => {
+      function handleChangeValue(key: string) {
+        return function (e) {
+          const target = e.target;
+          const value = key.match(/^(root|withHoliday)$/)
+            ? target.checked
+            : target.value;
+          setChronoData((chronoData) => {
+            return Object.assign(Object.assign({ ...chronoData }), {
+              [key]: value,
+            });
+          });
+        };
+      }
+      switch (field) {
+        case "id":
+        case "order":
+        case "depth":
+          return (
+            <TextField
+              fullWidth
+              label={field}
+              type="number"
+              value={isNil(chronoData[field]) ? 0 : chronoData[field]}
+              size="small"
+              disabled={!!field.match(/^(id|depth|order)$/)}
+              onChange={handleChangeValue(field)}
+            />
+          );
+        case "title":
+        case "content":
+        case "type":
+        case "name":
+        case "group":
+          return (
+            <TextField
+              fullWidth
+              label={field}
+              type="text"
+              value={isNil(chronoData[field]) ? "" : chronoData[field]}
+              size="small"
+              disabled={!!field.match(/^(type)$/)}
+              onChange={handleChangeValue(field)}
+            />
+          );
+        case "start_at":
+        case "end_at":
+          return <></>;
+        // case "root":
+        case "withHoliday":
+          return (
+            <FormControlLabel
+              labelPlacement="start"
+              label={field}
+              control={
+                <Switch
+                  onChange={handleChangeValue(field)}
+                  checked={chronoData[field]}
+                />
+              }
+            />
+          );
+        default:
+          return <></>;
+      }
+    },
+    [chronoData, setChronoData],
+  );
+
+  return (
+    <List>
+      {entries.map(([key, value], index) => (
+        <ListItem key={key}>
+          {listForm(key as keyof ChronoFolder | keyof ChronoTask)}
+        </ListItem>
+      ))}
+    </List>
+  );
+};
+
+function Editer({ chrono }: EditorProps) {
+  const [state, setState] = useState(false);
+  const [chronoData, setChronoData] = useState<ChronoFolder | ChronoTask>(
+    Object.assign({}, chrono),
+  );
+  const setChronoTree = useSetRecoilState(chronoTreeState);
+
+  const toggleDrawer =
+    (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
+      // setOpen(open);
+
+      if (
+        event &&
+        event.type === "keydown" &&
+        ((event as KeyboardEvent).key === "Tab" ||
+          (event as KeyboardEvent).key === "Shift")
+      ) {
+        return;
+      }
+
+      setState(open);
+    };
+
+  function handleEditConfirm() {
+    Object.assign(chrono, chronoData);
+    setChronoTree((chronoTree) => {
+      const newChronoTree = new ChronoTree();
+      newChronoTree.childrens = [...chronoTree.childrens];
+      return newChronoTree;
+    });
+  }
+
+  return (
+    <Box>
+      <IconButton
+        color="warning"
+        onClick={(e) => {
+          toggleDrawer(true)(e);
+        }}>
+        <EditNoteIcon />
+      </IconButton>
+      <SwipeableDrawer
+        anchor={"right"}
+        open={state}
+        onClose={toggleDrawer(false)}
+        onOpen={toggleDrawer(true)}>
+        <Box sx={{ width: 300 }} role="presentation">
+          <ChronoEditerForm
+            chronoData={chronoData}
+            setChronoData={setChronoData}
+          />
+          <Divider />
+          <List>
+            <ListItem>
+              <Button
+                fullWidth
+                variant="contained"
+                color="primary"
+                onClick={handleEditConfirm}>
+                수정
+              </Button>
+            </ListItem>
+            <ListItem>
+              <Button fullWidth variant="contained" color="error">
+                삭제
+              </Button>
+            </ListItem>
+          </List>
+        </Box>
+      </SwipeableDrawer>
+    </Box>
+  );
+}
+
+export default Editer;

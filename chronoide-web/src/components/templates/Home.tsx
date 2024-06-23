@@ -8,7 +8,8 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { ChangeEvent, KeyboardEvent, useState } from "react";
+import { Effect } from "effect";
+import { ChangeEvent, KeyboardEvent, SyntheticEvent, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { Message } from "../../libs/enums";
 import {
@@ -35,38 +36,82 @@ function Home() {
     key: ChronoTaskKeys,
     value: ChronoTaskValues,
   ) {
-    setChronoDataForm((chronoDataForm) => ({
-      ...chronoDataForm,
-      [key]: value,
-    }));
+    const changeChronoDataForm = Effect.sync(() => {
+      setChronoDataForm((chronoDataForm) => ({
+        ...chronoDataForm,
+        [key]: value,
+      }));
+    });
+
+    Effect.runSync(changeChronoDataForm);
   }
 
   function handleCreateChronoTask() {
-    if (!folders.selected) {
-      folders.selected = chronoTree.childrens[0] as ChronoFolder;
+    const checkSelectedFolder = Effect.sync(() => {
+      if (!folders.selected) {
+        folders.selected = chronoTree.childrens[0] as ChronoFolder;
+      }
+      return folders.selected;
+    });
+
+    const createChronoTask = Effect.sync(() => {
+      const chronoTask = new ChronoTask({
+        title: chronoDataForm.title,
+        content: chronoDataForm.content,
+      });
+
+      chronoTask.group = chronoDataForm.group;
+      chronoTask.name = "New Task";
+      return chronoTask;
+    });
+
+    const addChronoInTree = (task: ChronoTask) =>
+      Effect.sync(() => {
+        folders.selected?.addChrono(task);
+      });
+
+    const refreshTree = Effect.sync(() => {
+      setChronoTree((chronoTree) => {
+        const newChronoTree = new ChronoTree();
+        newChronoTree.childrens = [...chronoTree.childrens];
+        return newChronoTree;
+      });
+    });
+
+    const initializeChronoDataForm = Effect.sync(() => {
+      setChronoDataForm({
+        title: "",
+        content: "",
+        group: "",
+      });
+      folders.selected = null;
+    });
+
+    const initializeSelectedFolder = Effect.sync(() => {
+      folders.selected = null;
+    });
+
+    const handleCreateChronoTaskPipe = Effect.gen(function* () {
+      yield* checkSelectedFolder;
+      const chronoTask = yield* createChronoTask;
+      yield* addChronoInTree(chronoTask);
+      yield* refreshTree;
+      yield* initializeChronoDataForm;
+      yield* initializeSelectedFolder;
+    });
+
+    Effect.runSync(handleCreateChronoTaskPipe);
+  }
+
+  function handleDetectAutoCompletes(e: SyntheticEvent) {
+    const target = e.target;
+    if (target instanceof HTMLLIElement) {
+      const text = target.innerText;
+      setChronoDataForm((chronoData) => ({
+        ...chronoData,
+        group: text,
+      }));
     }
-
-    const chronoTask = new ChronoTask({
-      title: chronoDataForm.title,
-      content: chronoDataForm.content,
-    });
-
-    chronoTask.group = chronoDataForm.group;
-    chronoTask.name = "New Task";
-
-    folders.selected?.addChrono(chronoTask);
-
-    setChronoTree((chronoTree) => {
-      const newChronoTree = new ChronoTree();
-      newChronoTree.childrens = [...chronoTree.childrens];
-      return newChronoTree;
-    });
-    folders.selected = null;
-    setChronoDataForm({
-      title: "",
-      content: "",
-      group: "",
-    });
   }
 
   return (
@@ -82,7 +127,8 @@ function Home() {
           <FolderTree chronoTree={chronoTree} />
         </Paper>
         <Toolbar />
-        {chronoTree.getAllGroups()}
+        {/* {chronoTree.getAllGroups()} */}
+        {/* <Button onClick={copyTest}>copy</Button> */}
         <Stack
           component={Paper}
           direction="row"
@@ -100,6 +146,7 @@ function Home() {
             renderInput={(params) => (
               <TextField {...params} label={Message.Group.PLACEHOLDER} />
             )}
+            onChange={handleDetectAutoCompletes}
             onKeyUp={(e: KeyboardEvent<HTMLInputElement>) => {
               handleChangeChronoDataForm(
                 "group",

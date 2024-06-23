@@ -27,7 +27,6 @@ import Editer from "../moleculars/Editer";
 import FolderTree from "../moleculars/FolderTree";
 
 const ChronoFolderLevel = memo(({ chrono }: { chrono: ChronoFolder }) => {
-  const [editMode, setEditMode] = useState(false);
   const [open, setOpen] = useState(false);
   const [folders, setFolder] = useRecoilState(folderState);
   const [chronoTree, setChronoTree] = useRecoilState(chronoTreeState);

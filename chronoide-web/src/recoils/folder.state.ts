@@ -3,12 +3,12 @@ import { ChronoFolder } from "../models/Chrono";
 
 export const folderState = atom<{
   selected: ChronoFolder | null;
-  folders: ChronoFolder[];
+  // folders: ChronoFolder[];
 }>({
   key: "folderState",
   default: {
     selected: null,
-    folders: [],
+    // folders: [],
   },
   dangerouslyAllowMutability: true,
 });

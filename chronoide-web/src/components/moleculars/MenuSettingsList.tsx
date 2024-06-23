@@ -11,7 +11,7 @@ import { MouseEvent } from "react";
 
 interface MenuSettingsListProps {
   anchorElUser: HTMLElement | null;
-  settings: NavigateOption[];
+  settings: NavigateActOption[];
   handleOpenUserMenu: (event: MouseEvent<HTMLElement>) => void;
   handleCloseUserMenu: () => void;
 }
@@ -45,7 +45,12 @@ function MenuSettingsList({
         open={Boolean(anchorElUser)}
         onClose={handleCloseUserMenu}>
         {settings.map((setting) => (
-          <MenuItem key={setting.name} onClick={handleCloseUserMenu}>
+          <MenuItem
+            key={setting.name}
+            onClick={() => {
+              handleCloseUserMenu();
+              setting.action();
+            }}>
             <Typography textAlign="center">{setting.name}</Typography>
           </MenuItem>
         ))}

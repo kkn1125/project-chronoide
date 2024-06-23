@@ -1,7 +1,12 @@
 export declare global {
-  export interface NavigateOption {
+  export interface BaseNavigateOption {
     name: string;
+  }
+  export interface NavigateOption extends BaseNavigateOption {
     path: string;
+  }
+  export interface NavigateActOption extends BaseNavigateOption {
+    action: () => void;
   }
   export type TodoState = Chrono[];
   export interface Chrono {

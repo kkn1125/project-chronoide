@@ -15,11 +15,11 @@ export class Chrono {
 export class ChronoFolder extends Chrono {
   readonly root: boolean = false;
 
-  parent: ChronoFolder | null = null;
+  parent: number | null = null;
 
   childrens: (ChronoFolder | ChronoTask)[] = [];
 
-  constructor(option?: { parent?: ChronoFolder; root?: boolean }) {
+  constructor(option?: { parent?: number; root?: boolean }) {
     super();
 
     this.type = "folder";
@@ -27,6 +27,39 @@ export class ChronoFolder extends Chrono {
     if (option) {
       if (option.parent) this.parent = option.parent;
       if (option.root) this.root = option.root;
+    }
+  }
+
+  loadChildrens() {
+    this.childrens = this.childrens.map((child) => {
+      if (child.type === "folder") {
+        const folder = new ChronoFolder();
+        Object.assign(folder, child);
+        folder.loadChildrens();
+        if (Chrono.id < folder.id) {
+          Chrono.id = folder.id;
+        }
+        return folder;
+      } else {
+        const task = new ChronoTask();
+        Object.assign(task, child);
+        if (Chrono.id < task.id) {
+          Chrono.id = task.id;
+        }
+        return task;
+      }
+    });
+  }
+
+  findByChronoId(id: number): ChronoFolder | ChronoTask | undefined {
+    for (const item of this.childrens) {
+      if (item.id === id) {
+        return item;
+      } else if (item instanceof ChronoFolder) {
+        return item.findByChronoId(id);
+      }
+
+      return undefined;
     }
   }
 
@@ -45,7 +78,7 @@ export class ChronoFolder extends Chrono {
   }
 
   addChrono(chrono: ChronoFolder | ChronoTask) {
-    chrono.parent = this;
+    chrono.parent = this.id;
     chrono.depth = this.depth + 1;
     this.childrens.push(chrono);
   }
@@ -63,6 +96,13 @@ export class ChronoFolder extends Chrono {
     temp.push(this.group);
     return temp;
   }
+
+  // toJSON() {
+  //   const json = { ...this };
+  //   const childrens = json.childrens.map((child) => child.toJSON());
+  //   json.childrens = childrens;
+  //   return json;
+  // }
 }
 
 export class ChronoTask extends Chrono {
@@ -84,12 +124,12 @@ export class ChronoTask extends Chrono {
   //   return chronoTask;
   // }
 
-  parent: ChronoFolder | null = null;
+  parent: number | null = null;
 
   title: string = "no title";
   content: string = "no content";
-  start_at: number = 0;
-  end_at: number = 0;
+  start_at: number = Date.now();
+  end_at: number = Date.now();
   withHoliday: boolean = false;
 
   constructor(option?: { title?: string; content?: string }) {
@@ -106,6 +146,11 @@ export class ChronoTask extends Chrono {
   get duration() {
     return Math.ceil((this.end_at - this.start_at) / 1000 / 60 / 60 / 24);
   }
+
+  // toJSON() {
+  //   const json = { ...this };
+  //   return json;
+  // }
 }
 
 export type ChronoTaskKeys = keyof ChronoTask;

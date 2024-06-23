@@ -6,19 +6,37 @@ import Logo from "../../atoms/Logo";
 import MenuFlatList from "../../moleculars/MenuFlatList";
 import MenuMobileList from "../../moleculars/MenuMobileList";
 import MenuSettingsList from "../../moleculars/MenuSettingsList";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { chronoTreeState } from "../../../recoils/chrono.state";
+import { ChronoTree } from "../../../models/ChronoTree";
 
 const pages: NavigateOption[] = [
   { name: "home", path: "/" },
   { name: "about", path: "/about" },
 ];
-const settings: NavigateOption[] = [
-  { name: "Profile", path: "" },
-  { name: "Account", path: "" },
-  { name: "Dashboard", path: "" },
-  { name: "Logout", path: "" },
-];
 
 function Header() {
+  const setChronoTree = useSetRecoilState(chronoTreeState);
+  const chronoTree = useRecoilValue(chronoTreeState);
+  const settings: NavigateActOption[] = [
+    {
+      name: "save",
+      action: () => {
+        chronoTree.saveLocalStorage();
+      },
+    },
+    {
+      name: "load",
+      action: () => {
+        chronoTree.loadLocalStorage();
+        setChronoTree((chronoTree) => {
+          const newChronoTree = new ChronoTree();
+          newChronoTree.childrens = [...chronoTree.childrens];
+          return newChronoTree;
+        });
+      },
+    },
+  ];
   const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 

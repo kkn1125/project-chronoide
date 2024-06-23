@@ -10,21 +10,25 @@ import {
   SwipeableDrawer,
   Switch,
   TextField,
+  Typography,
 } from "@mui/material";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import {
   Dispatch,
   KeyboardEvent,
   MouseEvent,
   SetStateAction,
   useCallback,
-  useMemo,
   useState,
 } from "react";
+import { useSetRecoilState } from "recoil";
 import { isNil } from "../../common/features";
 import { ChronoFolder, ChronoTask } from "../../models/Chrono";
-import { useSetRecoilState } from "recoil";
-import { chronoTreeState } from "../../recoils/chrono.state";
 import { ChronoTree } from "../../models/ChronoTree";
+import { chronoTreeState } from "../../recoils/chrono.state";
+import dayjs from "dayjs";
+import { DateOrTimeView } from "@mui/x-date-pickers";
+import { Effect } from "effect";
 
 interface EditorProps {
   chrono: ChronoFolder | ChronoTask;
@@ -110,23 +114,31 @@ const ChronoEditerForm = ({
     [chronoData, setChronoData],
   );
 
-  return (
-    <List>
-      {entries.map(([key, value], index) => (
-        <ListItem key={key}>
-          {listForm(key as keyof ChronoFolder | keyof ChronoTask)}
-        </ListItem>
-      ))}
-    </List>
-  );
+  return entries.map(([key, value], index) => (
+    <ListItem key={key}>
+      {listForm(key as keyof ChronoFolder | keyof ChronoTask)}
+    </ListItem>
+  ));
 };
 
 function Editer({ chrono }: EditorProps) {
+  const views: DateOrTimeView[] = [
+    "year",
+    "month",
+    "day",
+    "hours",
+    "minutes",
+    "seconds",
+  ];
   const [state, setState] = useState(false);
   const [chronoData, setChronoData] = useState<ChronoFolder | ChronoTask>(
     Object.assign({}, chrono),
   );
   const setChronoTree = useSetRecoilState(chronoTreeState);
+  const [errorMark, setErrorMark] = useState({
+    start_at: false,
+    end_at: false,
+  });
 
   const toggleDrawer =
     (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
@@ -144,6 +156,36 @@ function Editer({ chrono }: EditorProps) {
       setState(open);
     };
 
+  function handleChangeTime(field: string) {
+    return function (e: dayjs.Dayjs | null) {
+      if (!e) return;
+
+      const time = e.toDate().getTime();
+
+      if (field === "end_at" && chronoData["start_at"] > time) {
+        // alert("종료일은 시작일 보다 크게 해야합니다.");
+        setErrorMark({ ...errorMark, [field]: true });
+        return;
+      }
+
+      if (field === "start_at" && chronoData["end_at"] < time) {
+        // alert("종료일은 시작일 보다 크게 해야합니다.");
+        setErrorMark({ ...errorMark, [field]: true });
+        return;
+      }
+
+      setChronoData((chronoData) => {
+        return Object.assign(Object.assign({ ...chronoData }), {
+          [field]: time,
+        });
+      });
+      setErrorMark({
+        start_at: false,
+        end_at: false,
+      });
+    };
+  }
+
   function handleEditConfirm() {
     Object.assign(chrono, chronoData);
     setChronoTree((chronoTree) => {
@@ -156,6 +198,7 @@ function Editer({ chrono }: EditorProps) {
   return (
     <Box>
       <IconButton
+        size="small"
         color="warning"
         onClick={(e) => {
           toggleDrawer(true)(e);
@@ -167,15 +210,56 @@ function Editer({ chrono }: EditorProps) {
         open={state}
         onClose={toggleDrawer(false)}
         onOpen={toggleDrawer(true)}>
-        <Box sx={{ width: 300 }} role="presentation">
-          <ChronoEditerForm
-            chronoData={chronoData}
-            setChronoData={setChronoData}
-          />
+        <Box sx={{ width: 450 }} role="presentation">
+          <List>
+            <ChronoEditerForm
+              chronoData={chronoData}
+              setChronoData={setChronoData}
+            />
+            {"start_at" in chronoData && "end_at" in chronoData && (
+              <ListItem>
+                <DateTimePicker
+                  views={views}
+                  value={dayjs(new Date(chronoData.start_at))}
+                  onChange={handleChangeTime("start_at")}
+                  slotProps={{
+                    textField: {
+                      label: "start_at",
+                      size: "small",
+                      color: errorMark["start_at"] ? "error" : undefined,
+                    },
+                  }}
+                />
+                <Typography sx={{ mx: 1 }}>-</Typography>
+                <DateTimePicker
+                  views={views}
+                  value={dayjs(new Date(chronoData.end_at))}
+                  onChange={handleChangeTime("end_at")}
+                  slotProps={{
+                    textField: {
+                      label: "end_at",
+                      size: "small",
+                      color: errorMark["end_at"] ? "error" : undefined,
+                    },
+                  }}
+                />
+              </ListItem>
+            )}
+            {chrono instanceof ChronoTask && (
+              <ListItem>
+                <TextField
+                  value={chrono.duration}
+                  size="small"
+                  label="duration"
+                />
+              </ListItem>
+            )}
+          </List>
           <Divider />
           <List>
             <ListItem>
               <Button
+                size="small"
                 fullWidth
                 variant="contained"
                 color="primary"
@@ -184,7 +268,7 @@ function Editer({ chrono }: EditorProps) {
               </Button>
             </ListItem>
             <ListItem>
-              <Button fullWidth variant="contained" color="error">
+              <Button size="small" fullWidth variant="contained" color="error">
                 삭제
               </Button>
             </ListItem>

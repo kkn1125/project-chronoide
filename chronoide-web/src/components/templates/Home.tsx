@@ -11,6 +11,7 @@ import {
 import { Effect } from "effect";
 import { ChangeEvent, KeyboardEvent, SyntheticEvent, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
+import { isNil } from "../../common/features";
 import { Message } from "../../libs/enums";
 import {
   ChronoFolder,
@@ -92,6 +93,11 @@ function Home() {
     });
 
     const handleCreateChronoTaskPipe = Effect.gen(function* () {
+      if (
+        Object.values(chronoDataForm).some((item) => isNil(item) || item === "")
+      ) {
+        yield* Effect.fail(new Error("빈 필드가 있습니다."));
+      }
       yield* checkSelectedFolder;
       const chronoTask = yield* createChronoTask;
       yield* addChronoInTree(chronoTask);
@@ -123,7 +129,7 @@ function Home() {
         <Typography component="h2" fontWeight={700} fontSize={24} gutterBottom>
           Your Task
         </Typography>
-        <Paper sx={{ p: 3, overflow: "auto", maxHeight: 200 }}>
+        <Paper sx={{ py: 3, pl: 10, pr: 3, overflow: "auto", maxHeight: 200 }}>
           <FolderTree chronoTree={chronoTree} />
         </Paper>
         <Toolbar />

@@ -9,14 +9,14 @@ interface FolderTree {
   chronoTree?: ChronoTree;
 }
 
-function FolderTree(props?: FolderTree) {
+function FolderTree(props: FolderTree) {
   const chronoList = useMemo(
-    () => (props.chronoTree ? props.chronoTree.childrens : props.chronos),
+    () => (props.chronoTree ? props.chronoTree.childrens : props.chronos) || [],
     [props.chronoTree, props.chronos],
   );
 
   return (
-    <Stack sx={{ mx: 3 }}>
+    <Stack sx={{ mx: 3 }} gap={1}>
       {chronoList.map((chrono) => (
         <Folder key={chrono.type + "-" + chrono.id} chrono={chrono} />
       ))}

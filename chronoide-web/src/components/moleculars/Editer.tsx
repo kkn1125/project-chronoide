@@ -52,6 +52,7 @@ const ChronoEditerForm = ({
           const value = key.match(/^(root|withHoliday)$/)
             ? target.checked
             : target.value;
+
           setChronoData((chronoData) => {
             return Object.assign(Object.assign({ ...chronoData }), {
               [key]: value,
@@ -139,6 +140,7 @@ function Editer({ chrono }: EditorProps) {
     start_at: false,
     end_at: false,
   });
+  const [duration, setDuration] = useState(0);
 
   const toggleDrawer =
     (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
@@ -174,11 +176,14 @@ function Editer({ chrono }: EditorProps) {
         return;
       }
 
+      console.log(time);
+
       setChronoData((chronoData) => {
         return Object.assign(Object.assign({ ...chronoData }), {
           [field]: time,
         });
       });
+
       setErrorMark({
         start_at: false,
         end_at: false,

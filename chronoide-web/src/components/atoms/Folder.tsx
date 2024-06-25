@@ -144,7 +144,7 @@ const ChronoFolderLevel = memo(
           {showTools && (
             <Stack direction="row">
               {/* 수정모드 토글 */}
-              <Editer chrono={chrono} />
+              {!chrono.root && <Editer chrono={chrono} />}
 
               {/* 폴더 생성 */}
               <IconButton

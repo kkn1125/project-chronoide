@@ -7,8 +7,13 @@ export default defineConfig(({ command, mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
 
+  const MODE = process.env.NODE_ENV || "production";
+
   dotenv.config({
     path: path.join(path.resolve(), ".env"),
+  });
+  dotenv.config({
+    path: path.join(path.resolve(), `.env.${MODE}`),
   });
 
   const env = loadEnv(mode, process.cwd(), "");

@@ -96,34 +96,9 @@ export class ChronoFolder extends Chrono {
     temp.push(this.group);
     return temp;
   }
-
-  // toJSON() {
-  //   const json = { ...this };
-  //   const childrens = json.childrens.map((child) => child.toJSON());
-  //   json.childrens = childrens;
-  //   return json;
-  // }
 }
 
 export class ChronoTask extends Chrono {
-  // static copy(chrono: ChronoTask) {
-  //   const chronoTask = new ChronoTask();
-  //   chronoTask.id = chrono.id;
-  //   chronoTask.name = chrono.name;
-  //   chronoTask.group = chrono.group;
-  //   chronoTask.order = chrono.order;
-  //   chronoTask.depth = chrono.depth;
-  //   chronoTask.parent = chrono.parent;
-
-  //   chronoTask.title = chrono.title;
-  //   chronoTask.content = chrono.content;
-  //   chronoTask.start_at = chrono.start_at;
-  //   chronoTask.end_at = chrono.end_at;
-  //   chronoTask.withHoliday = chrono.withHoliday;
-
-  //   return chronoTask;
-  // }
-
   parent: number | null = null;
 
   title: string = "no title";
@@ -146,11 +121,6 @@ export class ChronoTask extends Chrono {
   get duration() {
     return Math.ceil((this.end_at - this.start_at) / 1000 / 60 / 60 / 24);
   }
-
-  // toJSON() {
-  //   const json = { ...this };
-  //   return json;
-  // }
 }
 
 export type ChronoTaskKeys = keyof ChronoTask;

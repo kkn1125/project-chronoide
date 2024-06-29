@@ -3,7 +3,7 @@ import { ChronosModule } from './chronos/chronos.module';
 import { DatabaseModule } from './databases/database.module';
 
 @Module({
-  imports: [ChronosModule, DatabaseModule],
+  imports: [DatabaseModule, ChronosModule],
   controllers: [],
   providers: [],
 })

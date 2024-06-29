@@ -8,7 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ChronosService } from './chronos.service';
-import { CreateChronoDto } from './dto/create-chrono.dto';
+import { CreateChronoTaskDto } from './dto/create-chrono-task.entity';
 import { UpdateChronoDto } from './dto/update-chrono.dto';
 
 @Controller({
@@ -19,8 +19,23 @@ export class ChronosController {
   constructor(private readonly chronosService: ChronosService) {}
 
   @Post()
-  create(@Body() createChronoDto: CreateChronoDto) {
-    return this.chronosService.create(createChronoDto);
+  createRootFolder() {
+    return this.chronosService.create();
+  }
+
+  @Post('/folder/:folder_id')
+  createFolderIn(@Param('folder_id') folder_id: string) {
+    console.log(folder_id);
+    return this.chronosService.createFolderIn(folder_id);
+  }
+
+  @Post('/task/:folder_id')
+  createTaskIn(
+    @Param('folder_id') folder_id: string,
+    @Body() createChronoTaskDto: CreateChronoTaskDto,
+  ) {
+    console.log(folder_id);
+    return this.chronosService.createTaskIn(folder_id, createChronoTaskDto);
   }
 
   @Get()
